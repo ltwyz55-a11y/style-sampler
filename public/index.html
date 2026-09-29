@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f8f4">
+  <meta name="description" content="上传参考图片，提取共同风格，生成可复用的图片提示词。">
+  <title>画风采样器</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./config.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./index.html"><span class="brand-mark" aria-hidden="true">✳</span>画风采样器</a>
+      <button class="text-button" id="show-example" type="button">查看示例 <span aria-hidden="true">↗</span></button>
+    </header>
+    <main>
+      <div class="intro"><h1>从参考图，找到你的下一张图。</h1><p>上传一组图片，提取共同风格，生成可复用的提示词。</p></div>
+      <div class="local-notice" id="local-notice" hidden>当前为本地预览，启动服务后可分析。<a href="http://localhost:3000">打开本地服务 ↗</a></div>
+      <div class="local-notice" id="service-notice" role="status" hidden></div>
+      <section class="workspace" aria-label="风格分析工作台">
+        <div class="input-grid">
+          <section class="upload-panel">
+            <div class="panel-heading"><h2><span class="step">1</span>添加参考图片</h2><span class="subtle" id="image-count">0 / 8</span></div>
+            <div class="example" id="example">
+              <div class="example-caption"><span>效果示意</span><span>两张参考图，一种共同风格</span></div>
+              <div class="example-images">
+                <svg viewBox="0 0 240 155" role="img" aria-label="暖色平面插画：海边小屋与落日"><rect width="240" height="155" fill="#f0e7ce"/><circle cx="169" cy="44" r="24" fill="#d99266"/><path d="M0 106Q49 82 104 107T240 102V155H0Z" fill="#98aaa0"/><path d="M0 128Q53 99 113 122T240 124V155H0Z" fill="#57786a"/><path d="M46 67L80 41L115 67Z" fill="#ba7055"/><path d="M53 67H108V116H53Z" fill="#f8f0db"/><path d="M74 86H88V116H74Z" fill="#416354"/><path d="M60 78H69V87H60ZM92 78H101V87H92Z" fill="#bfac7b"/><path d="M182 91V132M170 112L182 98L194 112" fill="none" stroke="#456858" stroke-width="4" stroke-linecap="round"/></svg>
+                <svg viewBox="0 0 240 155" role="img" aria-label="同风格插画：木桌上的花瓶与枝叶"><rect width="240" height="155" fill="#eee4ce"/><rect x="132" y="15" width="78" height="104" rx="39" fill="#e2b789"/><circle cx="172" cy="52" r="21" fill="#d99266"/><path d="M0 118H240V155H0Z" fill="#bcb89a"/><path d="M82 78H135L143 122Q142 137 110 137T75 122Z" fill="#648474"/><path d="M105 91Q101 55 89 28M114 88Q117 47 140 25" fill="none" stroke="#466b58" stroke-width="3"/><path d="M98 55Q67 54 74 35Q98 34 98 55ZM104 76Q82 82 79 65Q97 55 104 76ZM123 54Q144 57 154 39Q136 31 123 54ZM116 72Q111 51 126 41Q140 58 116 72Z" fill="#638772"/><ellipse cx="175" cy="128" rx="24" ry="6" fill="#ded4b6"/></svg>
+              </div>
+              <div class="example-flow"><span class="flow-arrow" aria-hidden="true">↓</span><div class="tags"><span>暖色调</span><span>平面插画</span><span>柔和光线</span></div></div>
+              <p class="example-prompt">“一只窗边的橘猫，暖色调平面插画，柔和光线与简洁色块。”</p>
+            </div>
+            <input id="file-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
+            <div class="image-list" id="image-list" aria-live="polite"></div>
+            <button class="dropzone" id="dropzone" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5M4 16v4h16v-4"/></svg><span>选择图片<span class="drop-hint">，或拖放到这里</span></span></button>
+            <p class="upload-limits">2–8 张 · PNG / JPG / WebP / GIF · 每张 ≤ 12 MB</p>
+            <p class="privacy-note">图片会缩放后发送至云端分析；本站不保存图片，成功后清除预览。</p>
+          </section>
+          <section class="subject-panel">
+            <h2><span class="step">2</span><label for="subject-input">描述新主体</label></h2>
+            <textarea id="subject-input" maxlength="1600" placeholder="例如：一只在窗台打盹的橘猫，窗外是雨后的城市。"></textarea>
+            <div class="subject-bottom"><span class="subtle" id="char-count">0 / 1600</span></div>
+            <button class="primary-button" id="analyze-button" type="button"><span>生成提示词</span><span aria-hidden="true">→</span></button>
+            <p class="input-note">保留参考图的风格，换成你想画的内容。</p>
+          </section>
+        </div>
+        <div class="error-banner" id="error-banner" role="alert" hidden><p></p><button type="button" aria-label="关闭错误提示">×</button></div>
+        <div class="loading-panel" id="loading-panel" role="status" hidden><span class="spinner" aria-hidden="true"></span><span id="loading-status">正在准备图片…</span></div>
+      </section>
+      <section class="results" id="results" aria-labelledby="results-title" hidden>
+        <div class="results-heading"><div><h2 id="results-title" tabindex="-1">你的风格提示词 <span class="demo-badge" id="demo-badge" hidden>示例结果 · 非实际分析</span></h2><p id="result-summary"></p></div><button class="text-button" id="reset-button" type="button">新建分析</button></div>
+        <div class="prompt-toolbar"><div class="language-tabs" role="group" aria-label="提示词语言"><button class="language-tab active" type="button" data-lang="zh" aria-pressed="true">中文</button><button class="language-tab" type="button" data-lang="en" aria-pressed="false">English</button></div><span class="subtle">可直接编辑</span></div>
+        <label class="sr-only" for="prompt-output">可编辑提示词</label><textarea class="prompt-output" id="prompt-output"></textarea>
+        <div class="prompt-actions"><button class="primary-button compact" id="copy-prompt" type="button">复制提示词</button><button class="secondary-button" id="download-prompt" type="button">下载文本</button></div>
+        <div class="subject-update"><label for="next-subject">换个主体</label><div class="update-row"><input id="next-subject" maxlength="1600" placeholder="输入新的主体或场景"><button class="secondary-button" id="update-prompt" type="button">更新当前语言提示词</button></div><p class="subtle">沿用已提取的风格；点击更新会替换当前语言的编辑内容，主体文字保持原样。</p></div>
+        <details class="disclosure" id="template-details"><summary>可填空风格模板</summary><div class="disclosure-body"><p class="template-copy" id="template-output"></p><button class="secondary-button" id="copy-template" type="button">复制模板</button></div></details>
+        <details class="disclosure" id="analysis-details"><summary>详细分析</summary><div class="disclosure-body"><h3>共同风格</h3><p id="shared-style"></p><div class="element-grid" id="element-grid"></div><h3>共性细节</h3><div id="commonalities"></div><h3>逐图差异</h3><div id="variations"></div><p class="confidence-note" id="confidence-note"></p></div></details>
+      </section>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+</body>
+</html>

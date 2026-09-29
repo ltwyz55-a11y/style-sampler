@@ -1,0 +1,9 @@
+.env
+.DS_Store
+node_modules/
+
+_site/
+hosted-site/
+sources/
+.env.*
+!.env.example
