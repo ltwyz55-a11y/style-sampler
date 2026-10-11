@@ -1,38 +1,24 @@
 # 画风采样器
 
-一个独立运行的图片组风格分析网页。用户可以上传 2–8 张参考图，填写新主体后生成风格报告、双语提示词和可复用模板。
+公开网址：[https://ltwyz55-a11y.github.io/style-sampler/](https://ltwyz55-a11y.github.io/style-sampler/)
 
-## 启动
+前端由 GitHub Pages 托管；分析服务使用 Cloudflare Workers 免费方案调用 Google Gemini API。访客无需登录。分析每次最多发送 8 张浏览器压缩后的参考图，生成中英文风格报告、提示词和模板。
 
-需要 Node.js 20 或更新版本。
+## 图片和服务额度
 
-1. 复制 `.env.example` 为 `.env`。
-2. 在 `.env` 中填写服务端 API 密钥。密钥只由服务端读取，不要放到浏览器文件中。
-3. 运行 `npm start` 并打开终端显示的本地地址。
+- 每组 2–8 张；支持 PNG、JPG、WebP、GIF。图片在浏览器压缩后发送，单张最多 768 KB、整组最多 6 MB。
+- 每次分析前，访客需确认图片会发送给 Google Gemini 免费层。Google 可能使用免费层提交内容改进产品。本站和 Worker 不保存图片或分析结果；Cloudflare 仅保留用于限流的哈希来源标识及一小时内的请求时间，过期记录会清除。
+- 每个来源 IP 每滚动一小时最多 5 次有效分析提交，模型错误也计入次数。第 6 次请求收到 429 和重试时间。
+- Gemini 与 Cloudflare 免费配额有限；配额或服务不可用时，分析暂停并显示提示，不设置付费回退。
 
-可通过 `OPENAI_MODEL` 选择服务端可用的视觉模型，默认使用 `gpt-6-astra`；可通过 `PORT` 更改端口。
+## 部署分析接口
 
-## 图片处理
+请按 [`cloudflare/README.md`](cloudflare/README.md) 部署 Worker 并设置 `GEMINI_API_KEY` Secret。之后，在 GitHub 仓库 Actions Variables 中配置 `ANALYSIS_API_URL` 为 Worker HTTPS origin，并运行 Pages 工作流。密钥不得写入仓库或网页配置。
 
-支持 PNG、JPG、WebP 和 GIF（GIF 按首帧分析）；每组最多 8 张，单张不超过 12 MB，浏览器处理后的整组图片不超过 6 MB。图片在浏览器缩放后仅以内存数据随分析请求提交，不写入磁盘。分析结束后前端清除图片引用，服务端清理解码后的图片缓冲区；页面卸载后分析结果也会消失。云端分析请求由配置的视觉模型服务处理。
+## 本地前端与 Node 服务器
 
-## 说明
+需要 Node.js 20 或更新版本。`npm start` 可启动原有 Node/OpenAI 本地开发服务器；线上公开 Gemini 分析服务走 `cloudflare/worker.js`。直接以 `file://` 打开 `public/index.html` 时只能预览、查看示例；在线模型分析需要 API 服务地址。
 
-- API 代理使用 OpenAI Responses API 图片输入，并以 `store: false` 发起请求。
-- 本项目没有持久化、数据库、用户账户或图片生成能力；输出是供用户复制到生成工具的提示词。
-- 密钥未配置时，页面会提示如何配置；不会返回或显示密钥值。
+## Pages 发布
 
-
-## 页面预览与编辑
-
-可以直接打开 `public/index.html` 查看界面、上传图片预览和点击“查看示例”。示例结果有明确标记，不会调用云端模型。本地文件模式禁用分析按钮；启动服务后，从本地服务地址访问即可分析。
-
-结果优先显示可编辑提示词，中英文内容分别保留在当前页面。模板和详细分析默认折叠。填写“换个主体”后，点击更新按钮会替换当前语言的提示词，另一种语言的编辑内容不受影响。此操作复用已提取的风格，并保留新主体文字的原语言。
-
-## GitHub Pages 发布
-
-网页通过 `.github/workflows/pages.yml` 自动发布。仓库 Settings → Pages 的 Source 选择 GitHub Actions。
-
-GitHub Pages 仅托管前端。图片分析需单独运行 `server.mjs` 的 HTTPS 服务，并在该服务配置 `OPENAI_API_KEY`、`HOST=0.0.0.0` 和 `ALLOWED_ORIGINS=https://ltwyz55-a11y.github.io`。在仓库 Actions Variables 中设置 `ANALYSIS_API_URL` 为服务的 HTTPS 域名，然后重新运行发布工作流。
-
-尚未连接分析服务时，公开页面仍可查看示例和预览图片，分析按钮会禁用。密钥仅放在分析服务的秘密环境变量中，不能放进仓库、Pages 配置或 Actions Variables。
+推送到 `main` 后，`.github/workflows/pages.yml` 自动构建并发布前端。`ANALYSIS_API_URL` 是公开 API 路由配置，不是密钥；没有该变量时，页面显示分析服务未连接。

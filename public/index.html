@@ -37,7 +37,8 @@
             <div class="image-list" id="image-list" aria-live="polite"></div>
             <button class="dropzone" id="dropzone" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5M4 16v4h16v-4"/></svg><span>选择图片<span class="drop-hint">，或拖放到这里</span></span></button>
             <p class="upload-limits">2–8 张 · PNG / JPG / WebP / GIF · 每张 ≤ 12 MB</p>
-            <p class="privacy-note">图片会缩放后发送至云端分析；本站不保存图片，成功后清除预览。</p>
+            <p class="privacy-note">分析时图片会发送给 Google Gemini。免费层提交内容可能用于改进 Google 产品；本站不保存图片或分析结果。</p>
+            <label class="consent-row" for="privacy-consent"><input id="privacy-consent" type="checkbox"><span>我已了解图片会发送给 Google Gemini，并同意用于本次分析。<a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener noreferrer">免费层数据说明</a></span></label>
           </section>
           <section class="subject-panel">
             <h2><span class="step">2</span><label for="subject-input">描述新主体</label></h2>

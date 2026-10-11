@@ -9,6 +9,7 @@ const imageCount = $('#image-count');
 const subjectInput = $('#subject-input');
 const charCount = $('#char-count');
 const analyzeButton = $('#analyze-button');
+const privacyConsent = $('#privacy-consent');
 const errorBanner = $('#error-banner');
 const loadingPanel = $('#loading-panel');
 const results = $('#results');
@@ -140,7 +141,7 @@ function setLoading(active) {
   analyzeButton.querySelector('span').textContent = active ? '正在分析…' : '生成提示词';
   loadingPanel.hidden = !active;
   $('.workspace').setAttribute('aria-busy', String(active));
-  [dropzone, fileInput, subjectInput, $('#show-example'), $('#reset-button'), $('#update-prompt')].forEach((el) => { el.disabled = active; });
+  [dropzone, fileInput, subjectInput, privacyConsent, $('#show-example'), $('#reset-button'), $('#update-prompt')].forEach((el) => { el.disabled = active; });
   document.querySelectorAll('.image-remove').forEach((el) => { el.disabled = active; });
 }
 function showPrompt() {
@@ -214,17 +215,20 @@ async function runAnalysis() {
   if (files.length < 2) return showError('请至少选择 2 张参考图片。');
   const subject = subjectInput.value.trim();
   if (!subject) { showError('请描述想生成的新主体或场景。'); subjectInput.focus(); return; }
+  if (!privacyConsent.checked) { showError('请先阅读并同意图片处理说明，再开始分析。'); privacyConsent.focus(); return; }
   setLoading(true);
   $('#loading-status').textContent = '正在准备图片…';
   let prepared = [];
+  let consentUsed = false;
   try {
     prepared = await Promise.all(files.map((item) => prepareImage(item.file)));
     const totalBytes = prepared.reduce((total, image) => total + Math.floor((image.data.split(',')[1] || '').length * .75), 0);
     if (totalBytes > 6 * 1024 * 1024) throw new Error('图片处理后的总大小超过 6 MB，请减少图片数量。');
     $('#loading-status').textContent = '已开始云端分析，正在等待结果…';
+    consentUsed = true;
     const response = await fetch(apiUrl('/api/analyze'), {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ images: prepared, subject }),
+      body: JSON.stringify({ images: prepared, subject, consent: true }),
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.error || '分析失败，请稍后重试。');
@@ -236,6 +240,7 @@ async function runAnalysis() {
     showError(error.message || '分析失败，请检查网络后重试。');
   } finally {
     prepared.forEach((image) => { image.data = ''; });
+    if (consentUsed) privacyConsent.checked = false;
     setLoading(false);
   }
 }
